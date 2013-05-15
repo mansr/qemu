@@ -3711,3 +3711,47 @@ float64 VFP_HELPER(muladd, d)(float64 a, float64 b, float64 c, void *fpstp)
     float_status *fpst = fpstp;
     return float64_muladd(a, b, c, 0, fpst);
 }
+
+float32 VFP_HELPER(maxnm, s)(float32 a, float32 b, void *fpstp)
+{
+    int nan1 = float32_is_quiet_nan(a);
+    int nan2 = float32_is_quiet_nan(b);
+    if (nan1 && !nan2)
+        a = float32_chs(float32_infinity);
+    else if (!nan1 && nan2)
+        b = float32_chs(float32_infinity);
+    return float32_max(a, b, fpstp);
+}
+
+float64 VFP_HELPER(maxnm, d)(float64 a, float64 b, void *fpstp)
+{
+    int nan1 = float64_is_quiet_nan(a);
+    int nan2 = float64_is_quiet_nan(b);
+    if (nan1 && !nan2)
+        a = float64_chs(float64_infinity);
+    else if (!nan1 && nan2)
+        b = float64_chs(float64_infinity);
+    return float64_max(a, b, fpstp);
+}
+
+float32 VFP_HELPER(minnm, s)(float32 a, float32 b, void *fpstp)
+{
+    int nan1 = float32_is_quiet_nan(a);
+    int nan2 = float32_is_quiet_nan(b);
+    if (nan1 && !nan2)
+        a = float32_infinity;
+    else if (!nan1 && nan2)
+        b = float32_infinity;
+    return float32_min(a, b, fpstp);
+}
+
+float64 VFP_HELPER(minnm, d)(float64 a, float64 b, void *fpstp)
+{
+    int nan1 = float64_is_quiet_nan(a);
+    int nan2 = float64_is_quiet_nan(b);
+    if (nan1 && !nan2)
+        a = float64_infinity;
+    else if (!nan1 && nan2)
+        b = float64_infinity;
+    return float64_min(a, b, fpstp);
+}

@@ -939,6 +939,8 @@ VFP_OP2(add)
 VFP_OP2(sub)
 VFP_OP2(mul)
 VFP_OP2(div)
+VFP_OP2(maxnm)
+VFP_OP2(minnm)
 
 #undef VFP_OP2
 
@@ -2574,6 +2576,18 @@ static int disas_v8vfp_insn(CPUARMState *env, DisasContext *s, uint32_t insn)
         gen_mov_vreg_F0(dp, rd);
         gen_set_label(pass_label);
 
+        return 0;
+    }
+
+    if (((insn >> 20) & 3) == 0) {
+        gen_mov_F0_vreg(dp, rn);
+        gen_mov_F1_vreg(dp, rm);
+        if (insn & (1 << 6)) {
+            gen_vfp_minnm(dp);
+        } else {
+            gen_vfp_maxnm(dp);
+        }
+        gen_mov_vreg_F0(dp, rd);
         return 0;
     }
 
