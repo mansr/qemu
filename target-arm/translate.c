@@ -2546,6 +2546,40 @@ static TCGv_i32 gen_load_and_replicate(DisasContext *s, TCGv_i32 addr, int size)
     return tmp;
 }
 
+static int disas_v8vfp_insn(CPUARMState *env, DisasContext *s, uint32_t insn)
+{
+    uint32_t rd, rn, rm;
+    int dp = (insn >> 8) & 1;
+
+    if (dp) {
+        VFP_DREG_D(rd, insn);
+        VFP_DREG_N(rn, insn);
+        VFP_DREG_M(rm, insn);
+    } else {
+        rd = VFP_SREG_D(insn);
+        rn = VFP_SREG_N(insn);
+        rm = VFP_SREG_M(insn);
+    }
+
+    if (((insn >> 23) & 1) == 0) {
+        /* vsel */
+        int cc = (insn >> 20) & 3;
+        int cond = (cc << 2) | (((cc << 1) ^ cc) & 2);
+        int pass_label = gen_new_label();
+
+        gen_mov_F0_vreg(dp, rn);
+        gen_mov_vreg_F0(dp, rd);
+        gen_test_cc(cond, pass_label);
+        gen_mov_F0_vreg(dp, rm);
+        gen_mov_vreg_F0(dp, rd);
+        gen_set_label(pass_label);
+
+        return 0;
+    }
+
+    return 1;
+}
+
 /* Disassemble a VFP instruction.  Returns nonzero if an error occurred
    (ie. an undefined instruction).  */
 static int disas_vfp_insn(CPUARMState * env, DisasContext *s, uint32_t insn)
@@ -2567,6 +2601,11 @@ static int disas_vfp_insn(CPUARMState * env, DisasContext *s, uint32_t insn)
         if (rn != ARM_VFP_FPSID && rn != ARM_VFP_FPEXC
             && rn != ARM_VFP_MVFR1 && rn != ARM_VFP_MVFR0)
             return 1;
+    }
+    if (((insn >> 28) & 0xf) == 0xf) {
+        if (!arm_feature(env, ARM_FEATURE_V8))
+            return 1;
+        return disas_v8vfp_insn(env, s, insn);
     }
     dp = ((insn & 0xf00) == 0xb00);
     switch ((insn >> 24) & 0xf) {
@@ -6241,6 +6280,10 @@ static int disas_coproc_insn(CPUARMState * env, DisasContext *s, uint32_t insn)
         /* cdp */
         return 1;
     }
+    if (((insn >> 28) & 0xf) == 0xf) {
+        /* cdp2 */
+        return 1;
+    }
 
     crm = insn & 0xf;
     if (is64) {
@@ -6698,6 +6741,12 @@ static void disas_arm_insn(CPUARMState * env, DisasContext *s)
                 goto illegal_op;
             }
             return; /* v7MP: Unallocated memory hint: must NOP */
+        }
+        if ((insn & 0x0f000010) == 0x0e000000) {
+            /* cdp2 */
+            if (disas_coproc_insn(env, s, insn))
+                goto illegal_op;
+            return;
         }
 
         if ((insn & 0x0ffffdff) == 0x01010000) {
@@ -8687,8 +8736,6 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
             if (disas_neon_data_insn(env, s, insn))
                 goto illegal_op;
         } else {
-            if (insn & (1 << 28))
-                goto illegal_op;
             if (disas_coproc_insn (env, s, insn))
                 goto illegal_op;
         }
