@@ -347,6 +347,8 @@ DEF_HELPER_2(neon_qneg_s32, i32, env, i32)
 
 DEF_HELPER_3(neon_min_f32, i32, i32, i32, ptr)
 DEF_HELPER_3(neon_max_f32, i32, i32, i32, ptr)
+DEF_HELPER_3(neon_minnm_f32, i32, i32, i32, ptr)
+DEF_HELPER_3(neon_maxnm_f32, i32, i32, i32, ptr)
 DEF_HELPER_3(neon_abd_f32, i32, i32, i32, ptr)
 DEF_HELPER_3(neon_ceq_f32, i32, i32, i32, ptr)
 DEF_HELPER_3(neon_cge_f32, i32, i32, i32, ptr)

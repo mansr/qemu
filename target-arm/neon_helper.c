@@ -1777,6 +1777,32 @@ uint32_t HELPER(neon_max_f32)(uint32_t a, uint32_t b, void *fpstp)
     return float32_val(float32_max(make_float32(a), make_float32(b), fpst));
 }
 
+uint32_t HELPER(neon_minnm_f32)(uint32_t a, uint32_t b, void *fpstp)
+{
+    float32 f0 = make_float32(a);
+    float32 f1 = make_float32(b);
+    int nan1 = float32_is_quiet_nan(f0);
+    int nan2 = float32_is_quiet_nan(f1);
+    if (nan1 && !nan2)
+        f0 = float32_infinity;
+    else if (!nan1 && nan2)
+        f1 = float32_infinity;
+    return float32_val(float32_min(f0, f1, fpstp));
+}
+
+uint32_t HELPER(neon_maxnm_f32)(uint32_t a, uint32_t b, void *fpstp)
+{
+    float32 f0 = make_float32(a);
+    float32 f1 = make_float32(b);
+    int nan1 = float32_is_quiet_nan(f0);
+    int nan2 = float32_is_quiet_nan(f1);
+    if (nan1 && !nan2)
+        f0 = float32_chs(float32_infinity);
+    else if (!nan1 && nan2)
+        f1 = float32_chs(float32_infinity);
+    return float32_val(float32_max(f0, f1, fpstp));
+}
+
 uint32_t HELPER(neon_abd_f32)(uint32_t a, uint32_t b, void *fpstp)
 {
     float_status *fpst = fpstp;
